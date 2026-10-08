@@ -2,9 +2,10 @@ import { useRef } from 'react';
 
 // Clue numbers that start in a cell. Across and down numbers can differ
 // (e.g. Across 1 and Down 3 can start in the same cell); identical numbers show once.
-const distinctLabels = (labels = []) =>
-  labels.filter((l, i, a) => a.findIndex((x) => x.number === l.number) === i);
-
+const sortedLabels = (labels = []) =>
+  [...labels].sort((a, b) =>
+    a.direction === b.direction ? 0 : a.direction === 'across' ? -1 : 1
+  );
 /**
  * Renders the crossword grid and handles typing/navigation.
  * `grid` is the server's cell layout (blocked/labels, no letters).
@@ -55,7 +56,7 @@ export default function CrosswordGrid({ grid, values, correctness, onCellChange,
             activeClue &&
             activeClue.cells &&
             activeClue.cells.some((p) => p.row === cell.row && p.col === cell.col);
-          const labels = distinctLabels(cell.labels);
+          const labels = sortedLabels(cell.labels);
 
           return (
             <div key={key} className={`cell ${status} ${isActive ? 'active-word' : ''}`}>
@@ -63,7 +64,7 @@ export default function CrosswordGrid({ grid, values, correctness, onCellChange,
                 <span className="cell-number">
                   {labels.map((l) => (
                     <span
-                      key={`${l.direction}-${l.number}`}
+                      key={`${l.direction}-${l.number}{l.direction === 'down' ? '↓' : '→'}`}
                       className={l.direction === 'down' ? 'down-num' : ''}
                     >
                       {l.number}
