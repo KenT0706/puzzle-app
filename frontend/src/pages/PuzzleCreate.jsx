@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api.js';
 
-const emptyClue = () => ({ direction: 'across', start_row: 0, start_col: 0, answer: '', clue_text: '' });
+const emptyClue = () => ({ direction: 'across', start_row: 0, start_col: 0, answer: '', clue_text: '', number: '' });
 const BLANK = '__________';
 
 // Handles both "+ New Puzzle" (no :puzzleId) and "Edit puzzle" (/edit/:puzzleId).
@@ -72,6 +72,7 @@ export default function PuzzleCreate() {
         ...c,
         start_row: Number(c.start_row),
         start_col: Number(c.start_col),
+        number: c.number === '' || c.number == null ? null : Number(c.number),
       })),
     };
     try {
@@ -126,6 +127,7 @@ export default function PuzzleCreate() {
       <table className="clue-table">
                 <colgroup>
           <col className="col-direction" />
+          <col className="col-number" />
           <col className="col-coord" />
           <col className="col-coord" />
           <col className="col-answer" />
@@ -134,7 +136,7 @@ export default function PuzzleCreate() {
         </colgroup>
         <thead>
           <tr>
-            <th>Direction</th><th>Row</th><th>Col</th><th>Answer</th><th>Clue text</th><th />
+            <th>Direction</th><th>No.</th><th>Row</th><th>Col</th><th>Answer</th><th>Clue text</th><th />
           </tr>
         </thead>
         <tbody>
@@ -158,6 +160,7 @@ export default function PuzzleCreate() {
                   </button>
                 </div>
               </td>
+                <td><input type="number" min="1" value={c.number ?? ''} onChange={(e) => updateClue(i, 'number', e.target.value)} /></td>
               <td><input type="number" min="0" value={c.start_row} onChange={(e) => updateClue(i, 'start_row', e.target.value)} /></td>
               <td><input type="number" min="0" value={c.start_col} onChange={(e) => updateClue(i, 'start_col', e.target.value)} /></td>
               <td><input value={c.answer} onChange={(e) => updateClue(i, 'answer', e.target.value)} placeholder="MATERNITY" /></td>

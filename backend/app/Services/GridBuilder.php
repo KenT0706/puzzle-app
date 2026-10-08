@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
 /**
@@ -10,24 +9,81 @@ use InvalidArgumentException;
  * and validates that overlapping answers agree on shared letters.
  *
  * A "clue placement" is an array with keys:
- *   direction ('across'|'down'), start_row, start_col, answer, clue_text
+ *   direction ('across'|'down'), start_row, start_col, answer, clue_text,
+ *   number (optional — see assignNumbers())
+ *
+ * Answers may contain letters and hyphens (e.g. OPEN-ENDED); a hyphen
+ * occupies its own cell.
  */
 class GridBuilder
 {
+    public static function cleanAnswer(string $answer): string
+    {
+        return strtoupper(preg_replace('/[^A-Za-z-]/', '', $answer));
+    }
+
+    /**
+     * Clue numbers, in the same order as $placements.
+     *
+     * - If EVERY placement has a `number`, those are used as-is (numbers are
+     *   per direction, like "Across 1 / Down 1" in a printed puzzle). Two clues
+     *   in the same direction may not share a number.
+     * - Otherwise numbers are auto-assigned: one shared number per start cell,
+     *   in reading order (classic crossword numbering).
+     *
+     * @return int[]
+     */
+    public static function assignNumbers(array $placements): array
+    {
+        $placements = array_values($placements);
+
+        $allExplicit = count($placements) > 0 && collect($placements)->every(
+            fn ($p) => isset($p['number']) && $p['number'] !== '' && $p['number'] !== null
+        );
+
+        if ($allExplicit) {
+            $seen = [];
+            foreach ($placements as $p) {
+                $k = $p['direction'] . '-' . (int) $p['number'];
+                if (isset($seen[$k])) {
+                    throw new InvalidArgumentException(
+                        "Two {$p['direction']} clues are both numbered {$p['number']}."
+                    );
+                }
+                $seen[$k] = true;
+            }
+            return array_map(fn ($p) => (int) $p['number'], $placements);
+        }
+
+        $startCells = collect($placements)
+            ->map(fn ($p) => ['row' => $p['start_row'], 'col' => $p['start_col']])
+            ->unique(fn ($c) => "{$c['row']}-{$c['col']}")
+            ->sortBy([['row', 'asc'], ['col', 'asc']])
+            ->values();
+
+        $numberFor = [];
+        $next = 1;
+        foreach ($startCells as $cell) {
+            $numberFor["{$cell['row']}-{$cell['col']}"] = $next++;
+        }
+
+        return array_map(fn ($p) => $numberFor["{$p['start_row']}-{$p['start_col']}"], $placements);
+    }
+
     /**
      * @return array{
-     *   letters: array<string, string>,      // "r-c" => letter, only active cells
-     *   numbers: array<string, int>,          // "r-c" => clue number, only start cells
-     *   numbered: array<int, array{row:int,col:int,direction:string}> // clue index => its number
+     *   letters: array<string, string>,   // "r-c" => letter, only active cells
+     *   labels: array<string, array<int, array{number:int,direction:string}>> // "r-c" => numbers shown in that cell
      * }
      */
     public static function build(array $placements, int $rows, int $cols): array
     {
-        $letters = []; // "r-c" => letter
+        $placements = array_values($placements);
+        $letters = [];
         $conflicts = [];
 
         foreach ($placements as $i => $p) {
-            $answer = strtoupper(preg_replace('/[^A-Za-z]/', '', $p['answer']));
+            $answer = self::cleanAnswer($p['answer']);
             if ($answer === '') {
                 throw new InvalidArgumentException("Clue #{$i} has an empty answer.");
             }
@@ -59,31 +115,20 @@ class GridBuilder
             throw new InvalidArgumentException(implode(' ', $conflicts));
         }
 
-        // Assign clue numbers: every distinct start cell (in reading order) gets the next number.
-        // A cell shared by an across-start and a down-start gets a single number used by both.
-        $startCells = collect($placements)
-            ->map(fn ($p) => ['row' => $p['start_row'], 'col' => $p['start_col']])
-            ->unique(fn ($c) => "{$c['row']}-{$c['col']}")
-            ->sortBy([['row', 'asc'], ['col', 'asc']])
-            ->values();
+        $numbers = self::assignNumbers($placements);
 
-        $numberFor = []; // "r-c" => number
-        $next = 1;
-        foreach ($startCells as $cell) {
-            $numberFor["{$cell['row']}-{$cell['col']}"] = $next++;
+        $labels = [];
+        foreach ($placements as $i => $p) {
+            $key = "{$p['start_row']}-{$p['start_col']}";
+            $labels[$key][] = ['number' => $numbers[$i], 'direction' => $p['direction']];
         }
 
-        $numbers = $numberFor;
-
-        return [
-            'letters' => $letters,
-            'numbers' => $numbers,
-        ];
+        return ['letters' => $letters, 'labels' => $labels];
     }
 
     /**
-     * Build the client-facing grid (no answers) for playing the puzzle:
-     * a rows x cols matrix of cells, each either blocked or { number, row, col }.
+     * Client-facing grid (no answers): rows x cols matrix of cells, each
+     * either blocked or active, with the clue number(s) that start there.
      */
     public static function toPlayableGrid(array $built, int $rows, int $cols): array
     {
@@ -92,12 +137,11 @@ class GridBuilder
             $rowCells = [];
             for ($c = 0; $c < $cols; $c++) {
                 $key = "{$r}-{$c}";
-                $active = array_key_exists($key, $built['letters']);
                 $rowCells[] = [
                     'row' => $r,
                     'col' => $c,
-                    'blocked' => !$active,
-                    'number' => $built['numbers'][$key] ?? null,
+                    'blocked' => !array_key_exists($key, $built['letters']),
+                    'labels' => $built['labels'][$key] ?? [],
                 ];
             }
             $grid[] = $rowCells;

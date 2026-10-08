@@ -36,6 +36,7 @@ class PuzzleController extends Controller
                 'start_col' => $c->start_col,
                 'answer' => $c->answer,
                 'clue_text' => $c->clue_text,
+                'number' => $c->number,
             ])->all(),
             $puzzle->rows,
             $puzzle->cols
@@ -80,29 +81,20 @@ class PuzzleController extends Controller
             'clues.*.start_col' => 'required|integer|min:0',
             'clues.*.answer' => 'required|string|min:1|max:64',
             'clues.*.clue_text' => 'required|string',
+            'clues.*.number' => 'nullable|integer|min:1',
         ]);
 
-        // Validate the whole layout (checks bounds + overlap conflicts) before saving anything.
+        // Validate the whole layout (bounds, overlap conflicts, duplicate numbers) before saving anything.
         try {
-            $built = GridBuilder::build($data['clues'], $data['rows'], $data['cols']);
+            GridBuilder::build($data['clues'], $data['rows'], $data['cols']);
         } catch (\InvalidArgumentException $e) {
             throw ValidationException::withMessages(['clues' => $e->getMessage()]);
         }
 
-        // Re-derive numbers so each clue gets the correct shared number.
-        $startCells = collect($data['clues'])
-            ->map(fn ($c) => ['row' => $c['start_row'], 'col' => $c['start_col']])
-            ->unique(fn ($c) => "{$c['row']}-{$c['col']}")
-            ->sortBy([['row', 'asc'], ['col', 'asc']])
-            ->values();
+        // Use the numbers you typed (if every clue has one), otherwise auto-number.
+        $numbers = GridBuilder::assignNumbers($data['clues']);
 
-        $numberFor = [];
-        $next = 1;
-        foreach ($startCells as $cell) {
-            $numberFor["{$cell['row']}-{$cell['col']}"] = $next++;
-        }
-
-        $puzzle = DB::transaction(function () use ($data, $numberFor) {
+        $puzzle = DB::transaction(function () use ($data, $numbers) {
             $puzzle = Puzzle::create([
                 'title' => $data['title'],
                 'category' => $data['category'] ?? null,
@@ -111,14 +103,14 @@ class PuzzleController extends Controller
                 'is_published' => $data['is_published'] ?? true,
             ]);
 
-            foreach ($data['clues'] as $c) {
+            foreach ($data['clues'] as $i => $c) {
                 PuzzleClue::create([
                     'puzzle_id' => $puzzle->id,
-                    'number' => $numberFor["{$c['start_row']}-{$c['start_col']}"],
+                    'number' => $numbers[$i],
                     'direction' => $c['direction'],
                     'start_row' => $c['start_row'],
                     'start_col' => $c['start_col'],
-                    'answer' => strtoupper(preg_replace('/[^A-Za-z]/', '', $c['answer'])),
+                    'answer' => GridBuilder::cleanAnswer($c['answer']),
                     'clue_text' => $c['clue_text'],
                 ]);
             }
@@ -147,6 +139,7 @@ class PuzzleController extends Controller
                 'start_col' => $c->start_col,
                 'answer' => $c->answer,
                 'clue_text' => $c->clue_text,
+                'number' => $c->number,
             ]),
         ]);
     }
@@ -166,6 +159,7 @@ class PuzzleController extends Controller
             'clues.*.start_col' => 'required|integer|min:0',
             'clues.*.answer' => 'required|string|min:1|max:64',
             'clues.*.clue_text' => 'required|string',
+            'clues.*.number' => 'nullable|integer|min:1',
         ]);
 
         try {
@@ -174,19 +168,9 @@ class PuzzleController extends Controller
             throw ValidationException::withMessages(['clues' => $e->getMessage()]);
         }
 
-        $startCells = collect($data['clues'])
-            ->map(fn ($c) => ['row' => $c['start_row'], 'col' => $c['start_col']])
-            ->unique(fn ($c) => "{$c['row']}-{$c['col']}")
-            ->sortBy([['row', 'asc'], ['col', 'asc']])
-            ->values();
+        $numbers = GridBuilder::assignNumbers($data['clues']);
 
-        $numberFor = [];
-        $next = 1;
-        foreach ($startCells as $cell) {
-            $numberFor["{$cell['row']}-{$cell['col']}"] = $next++;
-        }
-
-        DB::transaction(function () use ($puzzle, $data, $numberFor) {
+        DB::transaction(function () use ($puzzle, $data, $numbers) {
             $puzzle->update([
                 'title' => $data['title'],
                 'category' => $data['category'] ?? null,
@@ -200,14 +184,14 @@ class PuzzleController extends Controller
             // but re-checking against the edited answers is what you want anyway.
             $puzzle->clues()->delete();
 
-            foreach ($data['clues'] as $c) {
+            foreach ($data['clues'] as $i => $c) {
                 PuzzleClue::create([
                     'puzzle_id' => $puzzle->id,
-                    'number' => $numberFor["{$c['start_row']}-{$c['start_col']}"],
+                    'number' => $numbers[$i],
                     'direction' => $c['direction'],
                     'start_row' => $c['start_row'],
                     'start_col' => $c['start_col'],
-                    'answer' => strtoupper(preg_replace('/[^A-Za-z]/', '', $c['answer'])),
+                    'answer' => GridBuilder::cleanAnswer($c['answer']),
                     'clue_text' => $c['clue_text'],
                 ]);
             }

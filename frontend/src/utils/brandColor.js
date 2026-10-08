@@ -26,6 +26,7 @@ const CATEGORY_ICONS = {
   'industrial relations': '⚖️',
   ir: '⚖️',
   'talent management': '🌟',
+  'termination of employment / ir': '🚪',
 };
 
 export function iconFor(category = '') {
