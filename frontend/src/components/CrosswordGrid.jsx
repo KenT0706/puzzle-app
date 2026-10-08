@@ -60,18 +60,18 @@ export default function CrosswordGrid({ grid, values, correctness, onCellChange,
 
           return (
             <div key={key} className={`cell ${status} ${isActive ? 'active-word' : ''}`}>
-              {labels.length > 0 && (
-                <span className="cell-number">
-                  {labels.map((l) => (
-                    <span
-                      key={`${l.direction}-${l.number}{l.direction === 'down' ? '↓' : '→'}`}
-                      className={l.direction === 'down' ? 'down-num' : ''}
-                    >
-                      {l.number}
-                    </span>
-                  ))}
-                </span>
-              )}
+                {labels.length > 0 && (
+     <span className="cell-number">
+       {labels.map((l) => (
+         <span
+           key={`${l.direction}-${l.number}`}
+           className={l.direction === 'down' ? 'down-num' : 'across-num'}
+         >
+           {l.number}
+         </span>
+       ))}
+     </span>
+   )}
               <input
                 ref={(el) => (inputRefs.current[key] = el)}
                 maxLength={1}
