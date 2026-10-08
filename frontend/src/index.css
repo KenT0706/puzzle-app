@@ -251,7 +251,8 @@ main { max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
 .cell.correct input { color: #0E9F5C; }
 .cell.incorrect { background: var(--red-tint); animation: shake 0.35s ease; }
 .cell.incorrect input { color: #D8203A; }
-.cell-number { position: absolute; top: 1px; left: 3px; font-size: 0.55rem; color: var(--ink-soft); font-weight: 600; }
+.cell-number { position: absolute; top: 1px; left: 3px; font-size: 0.55rem; color: var(--ink-soft); font-weight: 500; display: flex; gap: 2px; line-height: 1; pointer-events: none; }
+.cell-number .down-num { font-weight: 800; color: var(--ink); }
 
 @keyframes shake {
   0%, 100% { transform: translateX(0); }

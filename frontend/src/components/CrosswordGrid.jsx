@@ -1,8 +1,13 @@
 import { useRef } from 'react';
 
+// Clue numbers that start in a cell. Across and down numbers can differ
+// (e.g. Across 1 and Down 3 can start in the same cell); identical numbers show once.
+const distinctLabels = (labels = []) =>
+  labels.filter((l, i, a) => a.findIndex((x) => x.number === l.number) === i);
+
 /**
  * Renders the crossword grid and handles typing/navigation.
- * `grid` is the server's cell layout (blocked/number, no letters).
+ * `grid` is the server's cell layout (blocked/labels, no letters).
  * `values` is a map "r-c" => letter currently filled in.
  * `correctness` (optional) is a map "r-c" => true|false from the last check.
  */
@@ -50,16 +55,28 @@ export default function CrosswordGrid({ grid, values, correctness, onCellChange,
             activeClue &&
             activeClue.cells &&
             activeClue.cells.some((p) => p.row === cell.row && p.col === cell.col);
+          const labels = distinctLabels(cell.labels);
 
           return (
             <div key={key} className={`cell ${status} ${isActive ? 'active-word' : ''}`}>
-              {cell.number && <span className="cell-number">{cell.number}</span>}
+              {labels.length > 0 && (
+                <span className="cell-number">
+                  {labels.map((l) => (
+                    <span
+                      key={`${l.direction}-${l.number}`}
+                      className={l.direction === 'down' ? 'down-num' : ''}
+                    >
+                      {l.number}
+                    </span>
+                  ))}
+                </span>
+              )}
               <input
                 ref={(el) => (inputRefs.current[key] = el)}
                 maxLength={1}
                 value={values[key] || ''}
                 onChange={(e) => {
-                  const letter = e.target.value.replace(/[^a-zA-Z]/, '').toUpperCase();
+                  const letter = e.target.value.replace(/[^a-zA-Z-]/, '').toUpperCase();
                   onCellChange(cell.row, cell.col, letter);
                   if (letter) focusCell(cell.row, cell.col + 1); // naive auto-advance
                 }}
