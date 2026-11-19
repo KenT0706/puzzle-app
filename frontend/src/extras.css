@@ -1,0 +1,132 @@
+/* Styles for: QR/share modal, landing page, topic welcome screen, live dashboard,
+   score chip + points toast, and the podium/leaderboard. Imported by App.jsx.
+   (index.css is loaded after this file, so rules that could clash with it are prefixed.) */
+
+/* ---------- host cards ---------- */
+.app-shell .admin-card-actions {
+  display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem;
+  padding: 0.6rem 1.25rem; background: rgba(0, 0, 0, 0.14); font-size: 0.85rem;
+}
+
+/* ---------- share modal ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(36, 27, 78, 0.55);
+  display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 50;
+}
+.modal-card {
+  background: var(--card); border-radius: var(--radius-lg); padding: 1.75rem; max-width: 360px; width: 100%;
+  text-align: center; box-shadow: var(--shadow-pop);
+  display: flex; flex-direction: column; align-items: center; gap: 0.9rem;
+}
+.modal-card h2 { margin: 0; font-size: 1.3rem; }
+.share-link { font-size: 0.8rem; color: var(--ink-soft); word-break: break-all; margin: 0; }
+.modal-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center; }
+
+/* ---------- landing / unavailable ---------- */
+.landing { text-align: center; max-width: 440px; margin: 3rem auto; }
+.landing-icon { font-size: 3rem; }
+.landing-footer { margin-top: 2.5rem; font-size: 0.8rem; }
+
+/* ---------- topic welcome screen ---------- */
+.topic-hero { border-radius: var(--radius-lg); padding: 1.75rem 1.5rem; margin-bottom: 1.75rem; box-shadow: var(--shadow-card); }
+.topic-icon { font-size: 2.4rem; display: block; }
+.topic-label { margin: 0.3rem 0 0; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.85; }
+.setup-screen .topic-hero h1 { margin: 0.2rem 0 0.4rem; font-size: 2rem; }
+.topic-sub { margin: 0; opacity: 0.9; }
+.mode-card small { display: block; margin-top: 0.4rem; font-family: var(--font-body); font-weight: 500; font-size: 0.78rem; opacity: 0.9; }
+.back-link { background: none; border: none; color: var(--brand); font-weight: 600; cursor: pointer; margin-bottom: 0.75rem; font-size: 0.95rem; }
+
+/* ---------- play screen: score, actions, toast ---------- */
+.play-title-row { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
+.score-chip {
+  background: var(--yellow); color: var(--ink); font-family: var(--font-display); font-weight: 700;
+  padding: 0.35rem 0.9rem; border-radius: 999px; box-shadow: var(--shadow-card);
+}
+.play-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.75rem; }
+.play-actions .check-button { margin-top: 0; }
+.play-leaderboard { margin-top: 2rem; }
+.play-leaderboard h2 { margin: 0 0 0.25rem; }
+
+.points-toast {
+  position: fixed; left: 50%; bottom: 1.5rem; transform: translateX(-50%);
+  background: var(--ink); color: white; padding: 0.85rem 1.4rem; border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop); z-index: 60; text-align: center; animation: toast-in 0.3s ease;
+}
+.points-toast strong { display: block; font-family: var(--font-display); font-size: 1.5rem; color: var(--yellow); }
+.points-toast.none strong { color: white; font-size: 1.05rem; }
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ---------- podium / leaderboard ---------- */
+.leaderboard-page { text-align: center; }
+.leaderboard-head h1 { margin: 0.2rem 0 0.3rem; font-size: 2.4rem; }
+.leaderboard-head .topic-label { color: var(--brand); }
+.leaderboard-sub { margin: 0; color: var(--ink-soft); }
+.leaderboard-admin { margin-top: 2rem; }
+
+.podium-empty { color: var(--ink-soft); text-align: center; padding: 1.5rem 0; }
+.pyramid { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; margin: 1.5rem 0; }
+.pyramid-row { display: flex; justify-content: center; gap: 0.8rem; flex-wrap: wrap; }
+
+.podium-cell {
+  position: relative; min-width: 150px; max-width: 220px; padding: 0.8rem 1rem;
+  border-radius: var(--radius-md); background: var(--card); box-shadow: var(--shadow-card);
+  display: flex; flex-direction: column; align-items: center; gap: 0.15rem; text-align: center;
+  animation: podium-pop 0.35s ease both;
+}
+.podium-cell.rank-1 { background: linear-gradient(160deg, #FFE27A, #FFC83D); transform: scale(1.12); margin-bottom: 0.4rem; }
+.podium-cell.rank-2 { background: linear-gradient(160deg, #F1F3F8, #CED3E0); }
+.podium-cell.rank-3 { background: linear-gradient(160deg, #FFD9B8, #E8A672); }
+.podium-cell.mine { outline: 3px solid var(--brand); outline-offset: 2px; }
+.podium-rank { font-size: 1.5rem; font-family: var(--font-display); font-weight: 700; line-height: 1.1; }
+.podium-name { font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.podium-score { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--brand-dark); }
+.podium-done { font-size: 0.7rem; font-weight: 600; color: #0E9F5C; }
+.podium-move { position: absolute; top: 6px; right: 8px; font-size: 0.75rem; font-weight: 800; }
+.podium-move.up { color: #0E9F5C; }
+.podium-move.down { color: #D8203A; }
+@keyframes podium-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+}
+
+.podium-big .podium-cell { min-width: 210px; max-width: 280px; padding: 1.1rem 1.4rem; }
+.podium-big .podium-name { font-size: 1.3rem; }
+.podium-big .podium-score { font-size: 1.5rem; }
+.podium-big .podium-rank { font-size: 2rem; }
+
+.podium-rest { max-width: 520px; margin: 1.25rem auto 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.rest-row {
+  display: flex; align-items: center; gap: 0.8rem; background: var(--card); border-radius: var(--radius-sm);
+  padding: 0.5rem 0.9rem; box-shadow: var(--shadow-card); text-align: left;
+}
+.rest-row.mine { outline: 3px solid var(--brand); }
+.rest-rank { font-family: var(--font-display); font-weight: 700; width: 2rem; color: var(--ink-soft); }
+.rest-name { flex: 1; font-weight: 600; }
+.rest-score { font-family: var(--font-display); font-weight: 700; color: var(--brand-dark); }
+
+/* ---------- live dashboard ---------- */
+.dashboard h1 { margin: 0; font-size: 1.8rem; }
+.dash-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem; }
+.dash-head select { padding: 0.55rem 0.8rem; border-radius: var(--radius-sm); border: 2px solid #E4E1F5; font-size: 0.95rem; background: var(--card); }
+.dash-stats { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.stat { background: var(--card); border-radius: var(--radius-md); padding: 0.9rem 1.4rem; box-shadow: var(--shadow-card); display: flex; flex-direction: column; min-width: 130px; }
+.stat strong { font-family: var(--font-display); font-size: 1.9rem; color: var(--brand); line-height: 1.1; }
+.stat span { font-size: 0.8rem; color: var(--ink-soft); }
+.dash-sessions { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+.dash-card { background: var(--card); border-radius: var(--radius-lg); padding: 1.1rem 1.25rem; box-shadow: var(--shadow-card); }
+.dash-card-top { display: flex; justify-content: space-between; gap: 0.75rem; align-items: flex-start; }
+.dash-card h3 { margin: 0 0 0.3rem; font-size: 1.05rem; }
+.badge { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.6rem; border-radius: 999px; color: white; }
+.badge.group { background: var(--green); }
+.badge.individual { background: var(--blue); }
+.status { font-size: 0.78rem; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
+.status.completed { color: #0E9F5C; }
+.progress { height: 8px; background: var(--brand-tint); border-radius: 999px; overflow: hidden; margin: 0.9rem 0 0.4rem; }
+.progress-bar { height: 100%; background: linear-gradient(90deg, var(--brand), var(--blue)); transition: width 0.4s ease; }
+.dash-meta { margin: 0 0 0.7rem; font-size: 0.8rem; color: var(--ink-soft); }
+.dash-card .participant-chips { justify-content: flex-start; }
+.participant-chip.idle { opacity: 0.55; }
+.participant-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: #CFCBE6; }
+.participant-chip .dot.on { background: var(--green); }

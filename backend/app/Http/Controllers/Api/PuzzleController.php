@@ -12,21 +12,23 @@ use Illuminate\Validation\ValidationException;
 
 class PuzzleController extends Controller
 {
-    // GET /api/puzzles  -- browse list (no answers)
-    public function index(Request $request)
+    // GET /api/puzzles -- admin-only. Every puzzle, with its share code and open/closed state.
+    public function index()
     {
-        $puzzles = Puzzle::query()
-            ->where('is_published', true)
-            ->when($request->query('category'), fn ($q, $cat) => $q->where('category', $cat))
-            ->orderByDesc('created_at')
-            ->get(['id', 'title', 'category', 'rows', 'cols', 'created_at']);
-
-        return response()->json($puzzles);
+        return response()->json(
+            Puzzle::orderByDesc('created_at')
+                ->get(['id', 'share_code', 'title', 'category', 'rows', 'cols', 'is_published', 'created_at'])
+        );
     }
 
-    // GET /api/puzzles/{puzzle} -- playable definition, answers stripped out
-    public function show(Puzzle $puzzle)
+    // GET /api/puzzles/{code} -- playable definition, answers stripped out
+    public function show(Request $request, Puzzle $puzzle)
     {
+        // Closed puzzles are only visible to the host (so they can preview them).
+        if (!$puzzle->is_published && !$request->user('sanctum')?->is_admin) {
+            abort(404);
+        }
+
         $puzzle->load('clues');
 
         $built = GridBuilder::build(
@@ -63,6 +65,7 @@ class PuzzleController extends Controller
             'cols' => $puzzle->cols,
             'grid' => $grid,
             'clues' => $clues,
+            'points_per_word' => (int) config('scoring.points_per_word'),
         ]);
     }
 
@@ -118,7 +121,7 @@ class PuzzleController extends Controller
             return $puzzle;
         });
 
-        return response()->json(['id' => $puzzle->id], 201);
+        return response()->json(['id' => $puzzle->id, 'share_code' => $puzzle->share_code], 201);
     }
 
     // GET /api/puzzles/{puzzle}/edit -- admin-only. Full definition, answers included, for editing.
@@ -180,8 +183,6 @@ class PuzzleController extends Controller
             ]);
 
             // Simplest safe approach: drop the old clue set and recreate it.
-            // Any in-progress play_sessions for this puzzle keep their grid_state,
-            // but re-checking against the edited answers is what you want anyway.
             $puzzle->clues()->delete();
 
             foreach ($data['clues'] as $i => $c) {
@@ -198,6 +199,15 @@ class PuzzleController extends Controller
         });
 
         return response()->json(['id' => $puzzle->id]);
+    }
+
+    // PATCH /api/puzzles/{puzzle}/publish -- admin-only. Open or close a puzzle for players.
+    public function setPublished(Request $request, Puzzle $puzzle)
+    {
+        $data = $request->validate(['is_published' => 'required|boolean']);
+        $puzzle->update(['is_published' => $data['is_published']]);
+
+        return response()->json(['id' => $puzzle->id, 'is_published' => $puzzle->is_published]);
     }
 
     // DELETE /api/puzzles/{puzzle} -- admin-only.

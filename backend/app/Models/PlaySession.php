@@ -13,12 +13,14 @@ class PlaySession extends Model
 
     protected $fillable = [
         'puzzle_id', 'mode', 'join_code', 'grid_state', 'correct_cells',
-        'status', 'started_at', 'completed_at',
+        'status', 'started_at', 'completed_at', 'score', 'solved_clues',
     ];
 
     protected $casts = [
         'grid_state' => 'array',
         'correct_cells' => 'array',
+        'solved_clues' => 'array',
+        'score' => 'integer',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
     ];

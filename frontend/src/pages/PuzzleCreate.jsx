@@ -79,7 +79,7 @@ export default function PuzzleCreate() {
       const res = isEditing
         ? await api.put(`/puzzles/${puzzleId}`, payload)
         : await api.post('/puzzles', payload);
-      navigate(`/play/${res.data.id}`);
+      navigate('/');
     } catch (err) {
       const message = err.response?.data?.errors
         ? Object.values(err.response.data.errors).flat().join(' ')

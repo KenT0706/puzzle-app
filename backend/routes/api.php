@@ -1,30 +1,19 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\PuzzleController;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\LeaderboardController;
 use App\Http\Controllers\Api\PlaySessionController;
+use App\Http\Controllers\Api\PuzzleController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Puzzle App API Routes
-|--------------------------------------------------------------------------
-| Add this file's contents into your Laravel app's routes/api.php
-| (these are automatically prefixed with /api and use the 'api' middleware
-| group, per Laravel's default RouteServiceProvider / bootstrap/app.php).
-|
-| Auth: token-based via Sanctum (Authorization: Bearer <token>), no cookies
-| or CSRF needed. See EnsureIsAdmin middleware — it must be registered as
-| the 'admin' alias (see README for Laravel 10 vs 11 registration).
-*/
-
-// --- Public ---
+// --- Public: a puzzle is only reachable through its private share code (the QR) ---
 Route::post('/login', [AuthController::class, 'login']);
 
-Route::get('/puzzles', [PuzzleController::class, 'index']);
-Route::get('/puzzles/{puzzle}', [PuzzleController::class, 'show']);
+Route::get('/puzzles/{puzzle:share_code}', [PuzzleController::class, 'show']);
+Route::get('/puzzles/{puzzle:share_code}/leaderboard', [LeaderboardController::class, 'show']);
+Route::post('/puzzles/{puzzle:share_code}/sessions', [PlaySessionController::class, 'store']);
 
-Route::post('/puzzles/{puzzle}/sessions', [PlaySessionController::class, 'store']);
 Route::post('/sessions/join', [PlaySessionController::class, 'join']);
 Route::get('/sessions/{session}', [PlaySessionController::class, 'show']);
 Route::patch('/sessions/{session}/cell', [PlaySessionController::class, 'updateCell']);
@@ -36,10 +25,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
 });
 
-// --- Admin-only: creating, editing, deleting puzzles & their questions ---
+// --- Host only: see all puzzles, create, edit, open/close, new round, live dashboard, delete ---
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::get('/puzzles', [PuzzleController::class, 'index']);
     Route::post('/puzzles', [PuzzleController::class, 'store']);
     Route::get('/puzzles/{puzzle}/edit', [PuzzleController::class, 'edit']);
     Route::put('/puzzles/{puzzle}', [PuzzleController::class, 'update']);
+    Route::patch('/puzzles/{puzzle}/publish', [PuzzleController::class, 'setPublished']);
+    Route::patch('/puzzles/{puzzle:share_code}/new-round', [LeaderboardController::class, 'newRound']);
     Route::delete('/puzzles/{puzzle}', [PuzzleController::class, 'destroy']);
+
+    Route::get('/dashboard', [DashboardController::class, 'index']);
 });

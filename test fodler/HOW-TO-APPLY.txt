@@ -1,0 +1,22 @@
+Payroll Puzzle - update bundle (only the files that changed)
+
+1. Unzip this over your project. Folders "backend" and "frontend" merge into yours;
+   files with the same name are replaced.
+
+2. In the frontend folder run:   npm install qrcode.react
+
+3. Frontend/src/pages/PuzzleCreate.jsx - one line. Find
+       navigate(`/play/${res.data.id}`);
+   and change it to
+       navigate('/');
+
+4. Commit and push (backend and frontend together).
+   Render runs the two new migrations by itself and loads the 3 new puzzles.
+
+5. After the first successful deploy, open backend/docker/start.sh and delete the
+   line  "php artisan db:seed --class=NewPuzzlesSeeder --force"  (and its comment),
+   then push again, so a puzzle you delete later does not come back.
+
+Scoring (change in backend/config/scoring.php, or set SCORE_POINTS_PER_WORD and
+SCORE_COMPLETION_BONUS in Render's Environment tab):
+   100 points per word, +200 when the whole puzzle is solved.
